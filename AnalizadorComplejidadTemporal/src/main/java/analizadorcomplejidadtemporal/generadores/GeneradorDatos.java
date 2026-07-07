@@ -15,7 +15,7 @@ public class GeneradorDatos {
         int[] arreglo = new int[tamano];
         Random random = new Random();
         for (int i = 0; i < tamano; i++) {
-            arreglo[i] = random.nextInt(50) + 1;
+            arreglo[i] = random.nextInt(500000) + 1;
         }
         return arreglo;
     }
