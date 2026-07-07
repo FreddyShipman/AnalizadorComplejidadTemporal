@@ -56,32 +56,45 @@ public class PantallaSeleccion extends javax.swing.JFrame {
         if (nombre == null) return;
 
         if (algoritmosSeleccionados.contains(nombre)) {
-            // Deseleccionar
             algoritmosSeleccionados.remove(nombre);
             boton.setBackground(new java.awt.Color(30, 41, 59));
             boton.setForeground(java.awt.Color.WHITE);
         } else {
-            // Seleccionar (máximo 3)
             if (algoritmosSeleccionados.size() < 3) {
                 algoritmosSeleccionados.add(nombre);
                 boton.setBackground(new java.awt.Color(0, 204, 204));
                 boton.setForeground(new java.awt.Color(18, 24, 36));
             }
         }
-
-        // Actualizar el texto del contador
         txtSeleccionadosCuenta.setText(String.valueOf(algoritmosSeleccionados.size()));
-
-        // Validar si el botón Siguiente debe estar habilitado
         boolean seleccionValida = algoritmosSeleccionados.size() >= 2 && algoritmosSeleccionados.size() <= 3;
         btnSiguienteHaciaSeleccionTamaño.setEnabled(seleccionValida);
-
-        // Bloquear los demás botones si ya se seleccionaron 3
+        boolean hayBusqueda = false;
+        boolean hayMatematico = false;
+        for (String alg : algoritmosSeleccionados) {
+            if (alg.contains("Búsqueda")) {
+                hayBusqueda = true;
+            } else {
+                hayMatematico = true;
+            }
+        }
         boolean limiteAlcanzado = algoritmosSeleccionados.size() == 3;
         for (javax.swing.JButton btn : nombresAlgoritmos.keySet()) {
             String name = nombresAlgoritmos.get(btn);
-            if (!algoritmosSeleccionados.contains(name)) {
-                btn.setEnabled(!limiteAlcanzado);
+            boolean esBusqueda = name.contains("Búsqueda");
+            
+            if (algoritmosSeleccionados.contains(name)) {
+                btn.setEnabled(true); 
+            } else {
+                if (limiteAlcanzado) {
+                    btn.setEnabled(false);
+                } else if (hayBusqueda && !esBusqueda) {
+                    btn.setEnabled(false);
+                } else if (hayMatematico && esBusqueda) {
+                    btn.setEnabled(false);
+                } else {
+                    btn.setEnabled(true);
+                }
             }
         }
     }
