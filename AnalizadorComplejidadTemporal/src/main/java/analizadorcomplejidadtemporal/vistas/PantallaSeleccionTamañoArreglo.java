@@ -10,11 +10,151 @@ package analizadorcomplejidadtemporal.vistas;
  */
 public class PantallaSeleccionTamañoArreglo extends javax.swing.JFrame {
 
+    private java.util.List<String> algoritmosSeleccionados;
+    private final java.util.List<Integer> tamanosSeleccionados = new java.util.ArrayList<>();
+    private boolean hayBusqueda;
+    private boolean hayIterRecur;
+
+    // Componentes dinámicos agregados por código
+    private javax.swing.JLabel lblDatoBuscar;
+    private javax.swing.JTextField txtDatoBuscar;
+    private javax.swing.JLabel lblMaxN;
+    private javax.swing.JTextField txtMaxN;
+
     /**
      * Creates new form PantallaSeleccionTamañoArreglo
      */
     public PantallaSeleccionTamañoArreglo() {
         initComponents();
+    }
+
+    /**
+     * Constructor que recibe los algoritmos seleccionados.
+     */
+    public PantallaSeleccionTamañoArreglo(java.util.List<String> algoritmos) {
+        initComponents();
+        this.algoritmosSeleccionados = algoritmos;
+        // Detectar qué tipos de algoritmos se seleccionaron
+        this.hayBusqueda = false;
+        this.hayIterRecur = false;
+        for (String alg : algoritmos) {
+            if (alg.contains("Búsqueda")) hayBusqueda = true;
+            else hayIterRecur = true;
+        }
+        configurarPantalla();
+    }
+
+    /**
+     * Configura la pantalla según los tipos de algoritmos seleccionados.
+     */
+    private void configurarPantalla() {
+        btnSiguienteHaciaResultados.setEnabled(false);
+
+        if (hayBusqueda) {
+            // Mostrar botones de tamaño + campo de dato a buscar
+            int posXLabel = hayIterRecur ? 80 : 200;
+            int posY = hayIterRecur ? 510 : 530;
+            int posXTxt = hayIterRecur ? 280 : 430;
+            int widthTxt = hayIterRecur ? 140 : 200;
+
+            lblDatoBuscar = new javax.swing.JLabel("Dato a buscar:");
+            lblDatoBuscar.setFont(new java.awt.Font("Segoe UI", 1, 22));
+            lblDatoBuscar.setForeground(java.awt.Color.WHITE);
+            jPanel1.add(lblDatoBuscar, new org.netbeans.lib.awtextra.AbsoluteConstraints(posXLabel, posY, 190, 40));
+
+            txtDatoBuscar = new javax.swing.JTextField("25");
+            txtDatoBuscar.setFont(new java.awt.Font("Segoe UI", 0, 22));
+            txtDatoBuscar.setBackground(new java.awt.Color(30, 41, 59));
+            txtDatoBuscar.setForeground(java.awt.Color.WHITE);
+            txtDatoBuscar.setCaretColor(java.awt.Color.WHITE);
+            txtDatoBuscar.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+            aplicarFiltroNumerico(txtDatoBuscar);
+            jPanel1.add(txtDatoBuscar, new org.netbeans.lib.awtextra.AbsoluteConstraints(posXTxt, posY, widthTxt, 40));
+        }
+
+        if (hayIterRecur && !hayBusqueda) {
+            // Solo iter/recur: ocultar botones de tamaño, mostrar campo N
+            btn100.setVisible(false);
+            btn1000.setVisible(false);
+            btn10000.setVisible(false);
+            btn100000.setVisible(false);
+            btn500001.setVisible(false);
+
+            txtTituloSeleccionDeAlgoritmos.setText("Selección del valor N");
+        }
+
+        if (hayIterRecur) {
+            // Agregar campo de texto para N (posición depende de si también hay búsqueda)
+            int posXLabel = hayBusqueda ? 80 : 150;
+            int posY = hayBusqueda ? 580 : 260;
+            int posXTxt = hayBusqueda ? 410 : 580;
+            int widthTxt = hayBusqueda ? 140 : 200;
+            String textoLabel = hayBusqueda ? "Valor N (iter/recur, 1-1000):" : "Valor máximo de N (1 - 1000):";
+
+            lblMaxN = new javax.swing.JLabel(textoLabel);
+            lblMaxN.setFont(new java.awt.Font("Segoe UI", 1, 22));
+            lblMaxN.setForeground(java.awt.Color.WHITE);
+            jPanel1.add(lblMaxN, new org.netbeans.lib.awtextra.AbsoluteConstraints(posXLabel, posY, 320, 50));
+
+            txtMaxN = new javax.swing.JTextField("40");
+            txtMaxN.setFont(new java.awt.Font("Segoe UI", 1, 28));
+            txtMaxN.setBackground(new java.awt.Color(30, 41, 59));
+            txtMaxN.setForeground(java.awt.Color.WHITE);
+            txtMaxN.setCaretColor(java.awt.Color.WHITE);
+            txtMaxN.setHorizontalAlignment(javax.swing.JTextField.CENTER);
+            aplicarFiltroNumerico(txtMaxN);
+            jPanel1.add(txtMaxN, new org.netbeans.lib.awtextra.AbsoluteConstraints(posXTxt, posY, widthTxt, 50));
+        }
+
+        // Habilitar siguiente según lo que se necesite
+        actualizarBotonSiguiente();
+
+        jPanel1.revalidate();
+        jPanel1.repaint();
+    }
+
+    /**
+     * Aplica un filtro al campo de texto para que solo acepte números (dígitos) y retroceso/borrado.
+     */
+    private void aplicarFiltroNumerico(javax.swing.JTextField textField) {
+        textField.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                char c = evt.getKeyChar();
+                if (!Character.isDigit(c) && c != java.awt.event.KeyEvent.VK_BACK_SPACE && c != java.awt.event.KeyEvent.VK_DELETE) {
+                    evt.consume(); // Ignorar cualquier carácter que no sea número
+                    java.awt.Toolkit.getDefaultToolkit().beep();
+                }
+            }
+        });
+    }
+
+    private void actualizarBotonSiguiente() {
+        if (hayBusqueda) {
+            // Necesita al menos 2 tamaños seleccionados
+            btnSiguienteHaciaResultados.setEnabled(tamanosSeleccionados.size() >= 2);
+        } else {
+            // Solo iter/recur: siempre se puede continuar
+            btnSiguienteHaciaResultados.setEnabled(true);
+        }
+    }
+
+    /**
+     * Alterna la selección de un tamaño de arreglo.
+     */
+    private void alternarTamano(javax.swing.JButton boton, int tamano) {
+        Integer t = tamano;
+        if (tamanosSeleccionados.contains(t)) {
+            tamanosSeleccionados.remove(t);
+            boton.setBackground(new java.awt.Color(30, 41, 59));
+            boton.setForeground(java.awt.Color.WHITE);
+        } else {
+            tamanosSeleccionados.add(t);
+            boton.setBackground(new java.awt.Color(0, 204, 204));
+            boton.setForeground(new java.awt.Color(18, 24, 36));
+        }
+        java.util.Collections.sort(tamanosSeleccionados);
+        actualizarBotonSiguiente();
     }
 
     /**
@@ -136,27 +276,55 @@ public class PantallaSeleccionTamañoArreglo extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btn10000ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn10000ActionPerformed
-        // TODO add your handling code here:
+        alternarTamano(btn10000, 10000);
     }//GEN-LAST:event_btn10000ActionPerformed
 
     private void btnSiguienteHaciaResultadosActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSiguienteHaciaResultadosActionPerformed
-        // TODO add your handling code here:
+        int datoBuscar = 0;
+        int[] tamanos = null;
+        int maxN = 0;
+
+        if (hayBusqueda) {
+            try {
+                datoBuscar = Integer.parseInt(txtDatoBuscar.getText().trim());
+            } catch (NumberFormatException e) {
+                javax.swing.JOptionPane.showMessageDialog(this, "Ingresa un número válido para buscar.");
+                return;
+            }
+            tamanos = tamanosSeleccionados.stream().mapToInt(Integer::intValue).toArray();
+        }
+        if (hayIterRecur) {
+            try {
+                maxN = Integer.parseInt(txtMaxN.getText().trim());
+                if (maxN < 1 || maxN > 1000) {
+                    javax.swing.JOptionPane.showMessageDialog(this, "El valor de N debe estar entre 1 y 1000.");
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                javax.swing.JOptionPane.showMessageDialog(this, "Ingresa un número válido entre 1 y 1000 para el valor de N.");
+                return;
+            }
+        }
+
+        PantallaResultados pantalla = new PantallaResultados(algoritmosSeleccionados, tamanos, datoBuscar, maxN);
+        pantalla.setVisible(true);
+        this.dispose();
     }//GEN-LAST:event_btnSiguienteHaciaResultadosActionPerformed
 
     private void btn1000ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn1000ActionPerformed
-        // TODO add your handling code here:
+        alternarTamano(btn1000, 1000);
     }//GEN-LAST:event_btn1000ActionPerformed
 
     private void btn100ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn100ActionPerformed
-        // TODO add your handling code here:
+        alternarTamano(btn100, 100);
     }//GEN-LAST:event_btn100ActionPerformed
 
     private void btn100000ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn100000ActionPerformed
-        // TODO add your handling code here:
+        alternarTamano(btn100000, 100000);
     }//GEN-LAST:event_btn100000ActionPerformed
 
     private void btn500001ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn500001ActionPerformed
-        // TODO add your handling code here:
+        alternarTamano(btn500001, 500000);
     }//GEN-LAST:event_btn500001ActionPerformed
 
     /**

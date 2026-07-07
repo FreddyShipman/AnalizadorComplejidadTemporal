@@ -12,6 +12,7 @@ public class PantallaSeleccion extends javax.swing.JFrame {
 
     private final java.util.List<String> algoritmosSeleccionados = new java.util.ArrayList<>();
     private final java.util.Map<javax.swing.JButton, String> nombresAlgoritmos = new java.util.HashMap<>();
+    private javax.swing.JButton btnBusquedaCentinela;
 
     private void inicializarAlgoritmos() {
         nombresAlgoritmos.put(btnBusquedaLineal, "Búsqueda Lineal");
@@ -27,6 +28,29 @@ public class PantallaSeleccion extends javax.swing.JFrame {
         btnSiguienteHaciaSeleccionTamaño.setEnabled(false);
     }
 
+    /**
+     * Agrega el botón de Búsqueda Centinela programáticamente.
+     */
+    private void agregarBotonCentinela() {
+        btnBusquedaCentinela = new javax.swing.JButton();
+        btnBusquedaCentinela.setBackground(new java.awt.Color(30, 41, 59));
+        btnBusquedaCentinela.setFont(new java.awt.Font("Segoe UI", 1, 20));
+        btnBusquedaCentinela.setForeground(new java.awt.Color(255, 255, 255));
+        btnBusquedaCentinela.setText("Busqueda Centinela");
+        btnBusquedaCentinela.addActionListener(e -> alternarSeleccion(btnBusquedaCentinela));
+        jPanel1.add(btnBusquedaCentinela, new org.netbeans.lib.awtextra.AbsoluteConstraints(60, 490, 240, 80));
+        nombresAlgoritmos.put(btnBusquedaCentinela, "Búsqueda Centinela");
+        jPanel1.revalidate();
+        jPanel1.repaint();
+    }
+
+    /**
+     * Determina si un algoritmo es de tipo búsqueda.
+     */
+    private boolean esBusqueda(String nombre) {
+        return nombre.contains("Búsqueda");
+    }
+
     private void alternarSeleccion(javax.swing.JButton boton) {
         String nombre = nombresAlgoritmos.get(boton);
         if (nombre == null) return;
@@ -34,25 +58,25 @@ public class PantallaSeleccion extends javax.swing.JFrame {
         if (algoritmosSeleccionados.contains(nombre)) {
             // Deseleccionar
             algoritmosSeleccionados.remove(nombre);
-            boton.setBackground(new java.awt.Color(30, 41, 59)); // Color oscuro original
+            boton.setBackground(new java.awt.Color(30, 41, 59));
             boton.setForeground(java.awt.Color.WHITE);
         } else {
             // Seleccionar (máximo 3)
             if (algoritmosSeleccionados.size() < 3) {
                 algoritmosSeleccionados.add(nombre);
-                boton.setBackground(new java.awt.Color(0, 204, 204)); // Cyan
-                boton.setForeground(new java.awt.Color(18, 24, 36)); // Texto oscuro para contraste
+                boton.setBackground(new java.awt.Color(0, 204, 204));
+                boton.setForeground(new java.awt.Color(18, 24, 36));
             }
         }
 
         // Actualizar el texto del contador
         txtSeleccionadosCuenta.setText(String.valueOf(algoritmosSeleccionados.size()));
 
-        // Validar si el botón Siguiente debe estar habilitado (al menos 2 y como máximo 3)
+        // Validar si el botón Siguiente debe estar habilitado
         boolean seleccionValida = algoritmosSeleccionados.size() >= 2 && algoritmosSeleccionados.size() <= 3;
         btnSiguienteHaciaSeleccionTamaño.setEnabled(seleccionValida);
 
-        // Bloquear (deshabilitar) los otros botones si ya se seleccionaron 3
+        // Bloquear los demás botones si ya se seleccionaron 3
         boolean limiteAlcanzado = algoritmosSeleccionados.size() == 3;
         for (javax.swing.JButton btn : nombresAlgoritmos.keySet()) {
             String name = nombresAlgoritmos.get(btn);
@@ -68,6 +92,7 @@ public class PantallaSeleccion extends javax.swing.JFrame {
     public PantallaSeleccion() {
         initComponents();
         inicializarAlgoritmos();
+        agregarBotonCentinela();
     }
 
     /**
@@ -278,7 +303,7 @@ public class PantallaSeleccion extends javax.swing.JFrame {
     }//GEN-LAST:event_btnBusquedaBinariaActionPerformed
 
     private void btnSiguienteHaciaSeleccionTamañoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSiguienteHaciaSeleccionTamañoActionPerformed
-        PantallaResultados pantalla = new PantallaResultados(algoritmosSeleccionados);
+        PantallaSeleccionTamañoArreglo pantalla = new PantallaSeleccionTamañoArreglo(algoritmosSeleccionados);
         pantalla.setVisible(true);
         this.dispose();
     }//GEN-LAST:event_btnSiguienteHaciaSeleccionTamañoActionPerformed

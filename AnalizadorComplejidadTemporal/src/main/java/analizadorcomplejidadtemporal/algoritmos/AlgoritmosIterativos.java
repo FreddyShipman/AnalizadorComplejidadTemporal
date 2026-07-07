@@ -10,7 +10,7 @@ import java.math.BigInteger;
 public class AlgoritmosIterativos {
 
     /**
-     * Fibonacci Iterativo: O(N)
+     * Potencia Iterativa: O(N)
      */
     public static BigDecimal potenciaIterativo(double base, int exponente) {
         BigDecimal bdBase = BigDecimal.valueOf(base);
@@ -21,7 +21,7 @@ public class AlgoritmosIterativos {
         return resultado;
     }
     /**
-     * Potencia Iterativa: O(N)
+     * Fibonacci Iterativo: O(N)
      */
     public static BigInteger fibonacciIterativo(int n) {
         if (n <= 0) {

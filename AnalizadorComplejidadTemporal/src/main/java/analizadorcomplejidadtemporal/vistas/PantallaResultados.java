@@ -4,6 +4,10 @@
  */
 package analizadorcomplejidadtemporal.vistas;
 
+import analizadorcomplejidadtemporal.generadores.GeneradorDatos;
+import analizadorcomplejidadtemporal.medidor.MedidorTiempo;
+import java.util.LinkedHashMap;
+
 /**
  *
  * @author Admin
@@ -12,6 +16,11 @@ public class PantallaResultados extends javax.swing.JFrame {
 
     private java.util.List<String> algoritmosSeleccionados;
 
+    // Configuración recibida
+    private int[] tamanos;     // Tamaños de arreglo (null si no hay búsqueda)
+    private int datoBuscar;    // Dato a buscar
+    private int maxN;          // Valor máximo N para iter/recur (0 si no hay iter/recur)
+
     /**
      * Creates new form PantallaResultados
      */
@@ -19,23 +28,169 @@ public class PantallaResultados extends javax.swing.JFrame {
         initComponents();
     }
 
+    /**
+     * Constructor unificado que recibe toda la configuración.
+     * @param algoritmos  algoritmos seleccionados
+     * @param tamanos     tamaños de arreglo (null si no hay búsqueda)
+     * @param datoBuscar  dato a buscar (ignorado si no hay búsqueda)
+     * @param maxN        valor máximo N (0 si no hay iter/recur)
+     */
+    public PantallaResultados(java.util.List<String> algoritmos, int[] tamanos, int datoBuscar, int maxN) {
+        this.algoritmosSeleccionados = algoritmos;
+        this.tamanos = tamanos;
+        this.datoBuscar = datoBuscar;
+        this.maxN = maxN;
+        initComponents();
+        ejecutarBenchmarks();
+    }
+
+    // Compatibilidad con constructor anterior
+    public PantallaResultados(java.util.List<String> algoritmosSeleccionados, int[] tamanos, int datoBuscar) {
+        this(algoritmosSeleccionados, tamanos, datoBuscar, 0);
+    }
+
+    public PantallaResultados(java.util.List<String> algoritmosSeleccionados, int maxN) {
+        this(algoritmosSeleccionados, null, 0, maxN);
+    }
+
     public PantallaResultados(java.util.List<String> algoritmosSeleccionados) {
         this.algoritmosSeleccionados = algoritmosSeleccionados;
         initComponents();
-        mostrarAlgoritmosSeleccionados();
     }
 
-    private void mostrarAlgoritmosSeleccionados() {
-        if (algoritmosSeleccionados != null) {
-            panelGraficoResultados.setBorder(javax.swing.BorderFactory.createTitledBorder(
-                javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 204, 204), 2),
-                "Algoritmos Comparados: " + String.join(", ", algoritmosSeleccionados),
-                javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
-                javax.swing.border.TitledBorder.DEFAULT_POSITION,
-                new java.awt.Font("Segoe UI", 1, 14),
-                java.awt.Color.WHITE
-            ));
+    /**
+     * Ejecuta los benchmarks y muestra la gráfica.
+     */
+    private void ejecutarBenchmarks() {
+        txtTituloSeleccionDeAlgoritmos.setText("Ejecutando...");
+        btnSiguienteHaciaInicio.setEnabled(false);
+
+        new Thread(() -> {
+            // Separar algoritmos por tipo
+            java.util.List<String> algBusqueda = new java.util.ArrayList<>();
+            java.util.List<String> algIterRecur = new java.util.ArrayList<>();
+            for (String alg : algoritmosSeleccionados) {
+                if (alg.contains("Búsqueda")) algBusqueda.add(alg);
+                else algIterRecur.add(alg);
+            }
+
+            LinkedHashMap<String, double[]> resultados = new LinkedHashMap<>();
+            int[] valoresX;
+
+            if (!algBusqueda.isEmpty() && algIterRecur.isEmpty()) {
+                // === MODO BÚSQUEDA ===
+                valoresX = tamanos;
+                // Generar UN arreglo por tamaño (compartido entre algoritmos para comparación justa)
+                for (int i = 0; i < tamanos.length; i++) {
+                    int tam = tamanos[i];
+                    int[] arregloAleatorio = GeneradorDatos.generarArregloAleatorio(tam);
+                    int[] arregloOrdenado = GeneradorDatos.ordenarArreglo(arregloAleatorio);
+
+                    for (String algoritmo : algBusqueda) {
+                        double[] tiempos = resultados.computeIfAbsent(algoritmo, k -> new double[tamanos.length]);
+                        // Binaria necesita arreglo ordenado, las demás usan aleatorio
+                        int[] arreglo = algoritmo.equals("Búsqueda Binaria") ? arregloOrdenado : arregloAleatorio;
+                        tiempos[i] = MedidorTiempo.medirBusqueda(algoritmo, arreglo, datoBuscar);
+                    }
+                }
+
+            } else if (algBusqueda.isEmpty() && !algIterRecur.isEmpty()) {
+                // === MODO ITERATIVO/RECURSIVO ===
+                int numPuntos = 10;
+                if (maxN <= 10) numPuntos = maxN;
+                valoresX = new int[numPuntos];
+                for (int i = 0; i < numPuntos; i++) {
+                    valoresX[i] = Math.max(1, (int) Math.round((double) (i + 1) / numPuntos * maxN));
+                }
+
+                for (String algoritmo : algIterRecur) {
+                    double[] tiempos = new double[valoresX.length];
+                    boolean timeout = false;
+                    for (int i = 0; i < valoresX.length; i++) {
+                        if (timeout) {
+                            tiempos[i] = -1; // Marcar como timeout
+                        } else {
+                            tiempos[i] = MedidorTiempo.medirIterativoRecursivo(algoritmo, valoresX[i]);
+                            if (tiempos[i] < 0) timeout = true; // Si hubo timeout, saltar el resto
+                        }
+                    }
+                    resultados.put(algoritmo, tiempos);
+                }
+
+            } else {
+                // === MODO MIXTO: búsqueda + iter/recur ===
+                // Usar los tamaños de arreglo como eje X para todos
+                valoresX = tamanos;
+
+                // Búsqueda: usar arreglos
+                for (int i = 0; i < tamanos.length; i++) {
+                    int tam = tamanos[i];
+                    int[] arregloAleatorio = GeneradorDatos.generarArregloAleatorio(tam);
+                    int[] arregloOrdenado = GeneradorDatos.ordenarArreglo(arregloAleatorio);
+
+                    for (String algoritmo : algBusqueda) {
+                        double[] tiempos = resultados.computeIfAbsent(algoritmo, k -> new double[tamanos.length]);
+                        int[] arreglo = algoritmo.equals("Búsqueda Binaria") ? arregloOrdenado : arregloAleatorio;
+                        tiempos[i] = MedidorTiempo.medirBusqueda(algoritmo, arreglo, datoBuscar);
+                    }
+                }
+
+                // Iter/recur: usar los mismos valores del eje X como N
+                for (String algoritmo : algIterRecur) {
+                    double[] tiempos = new double[tamanos.length];
+                    for (int i = 0; i < tamanos.length; i++) {
+                        // Limitar N a 1000 como dice el requisito
+                        int n = Math.min(tamanos[i], 1000);
+                        tiempos[i] = MedidorTiempo.medirIterativoRecursivo(algoritmo, n);
+                    }
+                    resultados.put(algoritmo, tiempos);
+                }
+            }
+
+            final int[] ejeX = valoresX;
+            final LinkedHashMap<String, double[]> res = resultados;
+
+            javax.swing.SwingUtilities.invokeLater(() -> {
+                txtTituloSeleccionDeAlgoritmos.setText("Resultados");
+                btnSiguienteHaciaInicio.setEnabled(true);
+                mostrarGrafica(ejeX, res);
+            });
+        }).start();
+    }
+
+    /**
+     * Muestra la gráfica con los resultados.
+     */
+    private void mostrarGrafica(int[] valoresX, LinkedHashMap<String, double[]> resultados) {
+        GraficaPersonalizada grafica = new GraficaPersonalizada();
+
+        // Determinar etiqueta del eje X
+        boolean todoBusqueda = true;
+        boolean todoIterRecur = true;
+        for (String alg : algoritmosSeleccionados) {
+            if (alg.contains("Búsqueda")) todoIterRecur = false;
+            else todoBusqueda = false;
         }
+        String etiqueta;
+        if (todoBusqueda) etiqueta = "Tamaño del arreglo";
+        else if (todoIterRecur) etiqueta = "Valor de N";
+        else etiqueta = "Tamaño de entrada";
+
+        grafica.setDatos(valoresX, resultados, etiqueta);
+
+        panelGraficoResultados.setLayout(new java.awt.BorderLayout());
+        panelGraficoResultados.removeAll();
+        panelGraficoResultados.add(grafica, java.awt.BorderLayout.CENTER);
+        panelGraficoResultados.setBorder(javax.swing.BorderFactory.createTitledBorder(
+            javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 204, 204), 2),
+            "Comparativa: " + String.join(" vs ", algoritmosSeleccionados),
+            javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
+            javax.swing.border.TitledBorder.DEFAULT_POSITION,
+            new java.awt.Font("Segoe UI", 1, 14),
+            java.awt.Color.WHITE
+        ));
+        panelGraficoResultados.revalidate();
+        panelGraficoResultados.repaint();
     }
 
     /**
